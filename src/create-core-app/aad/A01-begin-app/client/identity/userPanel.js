@@ -1,3 +1,4 @@
+import { inTeams } from '../modules/teamsHelpers.js';
 import {
     getLoggedInEmployee,
     logoff
@@ -6,17 +7,19 @@ import {
 class northwindUserPanel extends HTMLElement {
 
     async connectedCallback() {
+        // To skip the navigation rendering if the app is running in Teams
+        //console.log(await inTeams());
+        if (!(await inTeams())) {
+            const employee = await getLoggedInEmployee();
 
-        const employee = await getLoggedInEmployee();
+            if (!employee) {
 
-        if (!employee) {
+                alert("Employee not found; are you in the right tenant?");
+                logoff();
 
-            alert("Employee not found; are you in the right tenant?");
-            logoff();
+            } else {
 
-        } else {
-
-            this.innerHTML = `<div class="userPanel">
+                this.innerHTML = `<div class="userPanel">
                 <img src="data:image/bmp;base64,${employee.photo}"></img>
                 <p>${employee.displayName}</p>
                 <p>${employee.jobTitle}</p>
@@ -25,10 +28,11 @@ class northwindUserPanel extends HTMLElement {
             </div>
             `;
 
-            const logoutButton = document.getElementById('logout');
-            logoutButton.addEventListener('click', async ev => {
-                logoff();
-            });
+                const logoutButton = document.getElementById('logout');
+                logoutButton.addEventListener('click', async ev => {
+                    logoff();
+                });
+            }
         }
     }
 }
