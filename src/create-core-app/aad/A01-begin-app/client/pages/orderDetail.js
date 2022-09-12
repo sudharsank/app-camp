@@ -13,6 +13,9 @@ async function displayUI() {
 	const copyMsgElement = document.getElementById('copyMessage');
 	const copySectionElement = document.getElementById('copySection');
 	const errorMsgElement = document.getElementById('message');
+
+	const btnTaskModuleElement = document.getElementById('btnTaskModule');
+	const orderElement = document.getElementById('orderContent');
 	try {
 
 		const searchParams = new URLSearchParams(window.location.search);
@@ -60,6 +63,42 @@ async function displayUI() {
 						copyMsgElement.innerHTML = "Link copied!"
 					} catch (err) {
 						console.error('Failed to copy: ', err);
+					}
+				});
+
+				// Capture the notes for the order details. Dialog feature
+				btnTaskModuleElement.addEventListener('click', async ev => {
+					await ensureTeamsSdkInitialized();
+					if (!microsoftTeams.dialog.isSupported()) {
+						errorMsgElement.value = `Sorry, the button to open dialog is not supported`;
+						btnTaskModuleElement.disabled = 'disabled';
+					} else {
+						let taskInfo = {
+							title: null,
+							height: null,
+							width: null,
+							url: null,
+							fallbackUrl: null
+						};
+						taskInfo.url = `https://${window.location.hostname}/pages/orderNotesForm.html`;
+						taskInfo.title = "Order notes";
+						taskInfo.size = { height: 210, width: 400 };
+						let submitHandler = (response) => {
+							if (response.result) {
+								const result = response.result;
+								const postDate = new Date().toLocaleString();
+								const newComment = document.createElement('p');
+								if (result.notes) {
+									newComment.innerHTML = `<div><b>Posted on:</b>${postDate}</div>
+															<div><b>Notes:</b>${result.notes}</div><br/>
+															-----------------------------`;
+									orderElement.append(newComment);
+								}
+							} else {
+								errorMsgElement.value = `Error in response from dialog.submit${response.err}`;
+							}
+						};
+						microsoftTeams.dialog.open(taskInfo, submitHandler);
 					}
 				});
 			}
